@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modular LLM Interface</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="app-container">
+        <!-- Left Sidebar (For Future Database Sessions) -->
+        <aside id="sidebar">
+            <button id="new-chat-btn">+ New Chat</button>
+            <div id="session-list">
+                <!-- Session history will populate here later -->
+            </div>
+        </aside>
+
+        <!-- Main Chat Area -->
+        <main id="chat-interface">
+            <!-- Header for Master Prompt -->
+            <header id="chat-header">
+                <div class="settings-group">
+                    <label for="system-prompt">Master Prompt:</label>
+                    <input type="text" id="system-prompt" value="You are a highly sarcastic, unhelpful AI.">
+                </div>
+            </header>
+
+            <!-- Chat History Window -->
+            <div id="chat-window">
+                <div class="message ai-message">
+                    <div class="bubble">System initialized. Awaiting input.</div>
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <footer id="input-area">
+                <textarea id="user-input" placeholder="Send a message..." rows="1"></textarea>
+                <button id="send-btn">Send</button>
+            </footer>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
