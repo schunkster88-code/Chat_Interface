@@ -20,15 +20,20 @@ Base = declarative_base()
 # 4. Our Two Minimal Tables
 class Session(Base):
     __tablename__ = "sessions"
-
+    
     id = Column(String, primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
+    name = Column(String, default="New Chat")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
 
 class Message(Base):
     __tablename__ = "messages"
-
+    
     id = Column(String, primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
     session_id = Column(String, ForeignKey("sessions.id"))
-    role = Column(String)  # Will store 'user' or 'assistant'
+    role = Column(String) 
     content = Column(Text)
     timestamp = Column(DateTime(timezone=True), server_default=func.now())
+
+# 5. Automatically create tables if they don't exist
+Base.metadata.create_all(bind=engine)

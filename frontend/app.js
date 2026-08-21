@@ -5,7 +5,7 @@ const sendBtn = document.getElementById('send-btn');
 const systemPrompt = document.getElementById('system-prompt');
 
 // 2. Generate a unique session ID for this browser tab
-const sessionId = crypto.randomUUID();
+let sessionId = crypto.randomUUID();
 
 // 3. Helper function to create chat bubbles on the screen
 function appendMessage(role, text) {
@@ -78,3 +78,64 @@ userInput.addEventListener('keypress', function (e) {
         sendMessage();
     }
 });
+
+// 6. Fetch and display chat history in the sidebar
+async function loadSessions() {
+    const sessionList = document.getElementById('session-list');
+    
+    try {
+        const response = await fetch('http://127.0.0.1:8050/sessions');
+        const data = await response.json();
+        
+        // Clear out any old data before loading the new list
+        sessionList.innerHTML = '';
+        
+        // Loop through the database and create a button for each session
+        data.sessions.forEach(session => {
+            const btn = document.createElement('button');
+            btn.textContent = session.name; // Right now, this will say "New Chat"
+            
+            // A little inline styling to make them stack nicely
+            btn.style.width = '100%';
+            btn.style.marginBottom = '10px';
+            btn.style.backgroundColor = 'var(--bg-input)';
+            btn.style.color = 'var(--text-primary)';
+            
+            //execute the loadChat function when the button is clicked
+            btn.onclick = () => loadChat(session.id);
+            
+            sessionList.appendChild(btn);
+        });
+    } catch (error) {
+        console.error("Failed to load sessions:", error);
+    }
+}
+
+// Fire the function immediately when the page loads
+loadSessions();
+
+async function loadChat(id) {
+    try {
+        // 1. Update the active session ID so your next message goes to the right place
+        sessionId = id;
+        
+        // 2. Fetch the history from the backend
+        const response = await fetch(`http://127.0.0.1:8050/chat/history/${id}`);
+        const data = await response.json();
+        
+        // 3. Clear the current chat window
+        chatWindow.innerHTML = '';
+        
+        // 4. Draw every message onto the screen
+        data.history.forEach(msg => {
+            // Ensure the role matches our CSS classes ('user' or 'ai')
+            const role = msg.role === 'user' ? 'user' : 'ai';
+            
+            // We use the exact same appendMessage function you already wrote!
+            appendMessage(role, msg.content);
+        });
+        
+    } catch (error) {
+        console.error("Failed to load history:", error);
+    }
+}

@@ -4,6 +4,7 @@ from fastapi.responses import StreamingResponse
 from litellm import acompletion
 from fastapi import Depends
 from sqlalchemy.orm import Session as DBSession
+import ollama
 from database import SessionLocal, Session, Message
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -71,9 +72,21 @@ async def chat_stream(
     system_prompt: str = "You are a highly sarcastic, unhelpful AI.",
     session_id: str = "default_session"
 ):
-    # 1. Ensure a session exists to satisfy the relational database
-    if not db.query(Session).filter(Session.id == session_id).first():
-        db.add(Session(id=session_id))
+    # Check if this is a brand new conversation
+    session = db.query(Session).filter(Session.id == session_id).first()
+    
+    if not session:
+        # 1. Ask Ollama to summarize the very first prompt
+       
+        name_instruction = f"Summarize this in 3 to 4 words. Do not use quotes or punctuation: {prompt}"
+        
+        
+        name_response = ollama.generate(model="llama3", prompt=name_instruction)
+        chat_name = name_response['response'].strip()
+        
+        # 2. Save the newly generated name to the database
+        new_session = Session(id=session_id, name=chat_name)
+        db.add(new_session)
         db.commit()
     
     # 2. Save the user's incoming message to the database
@@ -90,3 +103,22 @@ async def chat_stream(
         ollama_stream_generator(prompt, db, session_id, system_prompt),
         media_type="text/plain",
     )
+
+@app.get("/sessions")
+def get_all_sessions(db: DBSession = Depends(get_db)):
+    sessions = db.query(Session).all()
+    
+    # Package up both the ID and the new Name!
+    session_list = [{"id": session.id, "name": session.name} for session in sessions]
+    
+    return {"sessions": session_list}
+
+@app.get("/chat/history/{session_id}")
+def get_chat_history(session_id: str, db: DBSession = Depends(get_db)):
+    # Grab all messages for this specific chat, sorted from oldest to newest
+    messages = db.query(Message).filter(Message.session_id == session_id).order_by(Message.timestamp).all()
+    
+    # Package them up cleanly
+    history = [{"role": msg.role, "content": msg.content} for msg in messages]
+    
+    return {"history": history}
